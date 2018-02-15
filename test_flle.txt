@@ -1225,7 +1225,6 @@ Twelfth District--San Francisco
 <div id="Footer2"></div>
 </div> <!-- CLOSES footer -->
 
-
 <script type="text/javascript" src="/resources/track_downloads.js"></script>
 </body>
 </html>
