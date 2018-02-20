@@ -40,13 +40,13 @@ def main():
     err_print("Removing .pdf files...")
     clean(reports, ".pdf")
     err_print("Navigating to correct web path...")
-    reports = sieve(reports, FALSE_ENDING, TRUE_ENDING)
-    count = 0
-    err_print("Extracting data from reports...")
+    reports = sieve_and_update(reports, FALSE_ENDING, TRUE_ENDING)
+    err_print("Extracting data from reports and adding to table...")
+    final_table = new_table()
     for report in reports:
-        data = extract(report)
-        save(data)
-        count += 1
+        final_table = extract(report, final_table)
+    err_print("Saving table to file...")
+    save(final_table)
     err_print("Scraping complete!")
 
 
@@ -77,7 +77,7 @@ def clean(sites, unwanted_type):
             sites.remove(site)
 
 
-def sieve(sites, false_identifier, true_identifier):
+def sieve_and_update(sites, false_identifier, true_identifier):
     updated_sites = []
     for site in sites:
         if site[-len(false_identifier):] == false_identifier:
@@ -87,11 +87,26 @@ def sieve(sites, false_identifier, true_identifier):
     return updated_sites
 
 
-def extract(report_html):
-    return
+def new_table():
+    new = ds.Table()
+    new = new.with_column("ID", [])
+    new = new.with_column("Data", [])
+    new = new.with_column("District Number", [])
+    new = new.with_column("Sector Heading", [])
+    new = new.with_column("Sector Text", [])
+    return new
+
+
+def extract(report_html, table):
+    site = soupify(report_html)
+    headings = site.find_all("p")
+    for heading in headings:
+        print(heading)
+    return table
 
 
 def save(report_html):
+    """ CONTENTS BELOW ARE DEPRECATED """
     # contents = soupify(report_html).prettify()
     name = "temp"
     # new_file = open(SCRAPING_DIRECTORY + name + '.html', 'w')
