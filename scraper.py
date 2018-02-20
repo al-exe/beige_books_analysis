@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup as bs
+import datascience as ds
 import requests
 import sys
 
@@ -13,10 +14,17 @@ YI1_LEN = len(YEAR_IDENTIFIER_1)
 YI2_LEN = len(YEAR_IDENTIFIER_2)
 YI3_LEN = len(YEAR_IDENTIFIER_3)
 
+FALSE_ENDING = "default.htm"
+TRUE_ENDING = "FullReport.htm"
+
 SCRAPING_DIRECTORY = "./scraped_files/"
 
+# TODO: Extract TEXT not HTML!
 # TODO: Add comprehensive comments
 # TODO: Clean up repetitive or messy code
+# TODO: Add 1970-1995 Year Scraping Support
+# TODO: Create scrapers for the multiple books and/or merge them with this scraper
+# TODO: Change web browsing to use selenium, because I assume it's easier
 
 
 def main():
@@ -31,10 +39,13 @@ def main():
         reports.extend(yearly_reports)
     err_print("Removing .pdf files...")
     clean(reports, ".pdf")
+    err_print("Navigating to correct web path...")
+    reports = sieve(reports, FALSE_ENDING, TRUE_ENDING)
     count = 0
-    err_print("Saving reports to directory...")
+    err_print("Extracting data from reports...")
     for report in reports:
-        save(soupify(report).prettify(), str(count))
+        data = extract(report)
+        save(data)
         count += 1
     err_print("Scraping complete!")
 
@@ -66,11 +77,28 @@ def clean(sites, unwanted_type):
             sites.remove(site)
 
 
-def save(contents, name):
-    new_file = open(SCRAPING_DIRECTORY + name + '.html', 'w')
-    new_file.write(contents)
-    new_file.close()
-    err_print("Saving report as " + name + ".html...")
+def sieve(sites, false_identifier, true_identifier):
+    updated_sites = []
+    for site in sites:
+        if site[-len(false_identifier):] == false_identifier:
+            updated_sites.append(site[:-len(false_identifier)] + true_identifier)
+        else:
+            updated_sites.append(site)
+    return updated_sites
+
+
+def extract(report_html):
+    return
+
+
+def save(report_html):
+    # contents = soupify(report_html).prettify()
+    name = "temp"
+    # new_file = open(SCRAPING_DIRECTORY + name + '.html', 'w')
+    # new_file.write(contents)
+    # new_file.close()
+    err_print("Saving " + report_html + " as " + name + ".html...")
+    return
 
 
 def year_id_check(link):
