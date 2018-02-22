@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup as bs
+import datascience as ds
 import os
 
 SCRAPING_DIRECTORY = "./scraped_files/"
@@ -15,6 +16,26 @@ def main():
             file_contents += line
         website = bs(file_contents, 'html.parser')
         print(website.get_text())
+
+
+def new_table():
+    new = ds.Table()
+    new = new.with_column("ID", [])
+    new = new.with_column("Data", [])
+    new = new.with_column("District Number", [])
+    new = new.with_column("Sector Heading", [])
+    new = new.with_column("Sector Text", [])
+    return new
+
+
+def parse(report_html, table):
+    headings = site.find_all("p")
+    for heading in headings:
+        print(heading)
+    return table
+
+
+def
 
 if __name__ == "__main__":  # Because this is good practice apparently
     main()

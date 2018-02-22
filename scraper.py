@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup as bs
-import datascience as ds
 import requests
 import sys
+import os
 
 ARCHIVE_URL = "https://www.federalreserve.gov/monetarypolicy/beige-book-archive.htm"
 
@@ -19,7 +19,6 @@ TRUE_ENDING = "FullReport.htm"
 
 SCRAPING_DIRECTORY = "./scraped_files/"
 
-# TODO: Extract TEXT not HTML!
 # TODO: Add comprehensive comments
 # TODO: Clean up repetitive or messy code
 # TODO: Add 1970-1995 Year Scraping Support
@@ -41,12 +40,11 @@ def main():
     clean(reports, ".pdf")
     err_print("Navigating to correct web path...")
     reports = sieve_and_update(reports, FALSE_ENDING, TRUE_ENDING)
-    err_print("Extracting data from reports and adding to table...")
-    final_table = new_table()
+    err_print("Clearing old files...")
+    delete_directory(SCRAPING_DIRECTORY)
+    err_print("Saving reports to directory...")
     for report in reports:
-        final_table = extract(report, final_table)
-    err_print("Saving table to file...")
-    save(final_table)
+        save(report)
     err_print("Scraping complete!")
 
 
@@ -87,33 +85,29 @@ def sieve_and_update(sites, false_identifier, true_identifier):
     return updated_sites
 
 
-def new_table():
-    new = ds.Table()
-    new = new.with_column("ID", [])
-    new = new.with_column("Data", [])
-    new = new.with_column("District Number", [])
-    new = new.with_column("Sector Heading", [])
-    new = new.with_column("Sector Text", [])
-    return new
-
-
-def extract(report_html, table):
-    site = soupify(report_html)
-    headings = site.find_all("p")
-    for heading in headings:
-        print(heading)
-    return table
-
-
 def save(report_html):
-    """ CONTENTS BELOW ARE DEPRECATED """
-    # contents = soupify(report_html).prettify()
-    name = "temp"
-    # new_file = open(SCRAPING_DIRECTORY + name + '.html', 'w')
-    # new_file.write(contents)
-    # new_file.close()
+    contents = soupify(report_html).prettify()
+    name = extract_numbers(report_html)
     err_print("Saving " + report_html + " as " + name + ".html...")
-    return
+    new_file = open(SCRAPING_DIRECTORY + name + '.html', 'w', encoding="utf-8")
+    # try:
+    new_file.write(contents)
+    new_file.close()
+
+
+def extract_numbers(string):
+    rstring = ""
+    for c in string:
+        if c.isdigit():
+            rstring += c
+    return rstring
+
+
+def delete_directory(directory):
+    for file in os.listdir(directory):
+        path = os.path.join(directory, file)
+        if os.path.isfile(path):
+            os.unlink(path)
 
 
 def year_id_check(link):
