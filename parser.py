@@ -17,6 +17,7 @@ TOPIC_LENGTH = 50
 
 # TODO: Find generalizable structure in all documents
 # TODO: Get parser to work
+# TODO: Add detailed commentary
 
 
 def main():

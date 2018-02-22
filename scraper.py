@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup as bs
+import selenium as s
 import requests
 import sys
 import shutil
