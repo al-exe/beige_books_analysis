@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup as bs
 import requests
 import sys
-import os
+import shutil
 
 ARCHIVE_URL = "https://www.federalreserve.gov/monetarypolicy/beige-book-archive.htm"
 
@@ -90,7 +90,6 @@ def save(report_html):
     name = extract_numbers(report_html)
     err_print("Saving " + report_html + " as " + name + ".html...")
     new_file = open(SCRAPING_DIRECTORY + name + '.html', 'w', encoding="utf-8")
-    # try:
     new_file.write(contents)
     new_file.close()
 
@@ -104,10 +103,7 @@ def extract_numbers(string):
 
 
 def delete_directory(directory):
-    for file in os.listdir(directory):
-        path = os.path.join(directory, file)
-        if os.path.isfile(path):
-            os.unlink(path)
+    shutil.rmtree(directory)
 
 
 def year_id_check(link):
