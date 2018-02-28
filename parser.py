@@ -25,9 +25,12 @@ DATE_DICTIONARY.update({"August": '8', "September": '9', "October": '10', "Novem
 
 def main():
     """ Main call for all parsing. Returns nothing and no errors (should) be thrown. """
+    err_print("Listing all files from scraping directory...")
     raw_files = os.listdir(SCRAPING_DIRECTORY)  # Lists all the files that were scraped
+    err_print("Instantiating new data table...\n")
     final_table = new_table()  # Creates a new table to store data
     for w in raw_files:  # Reads the 'text content' of all the scraped files and parses them into the final table
+        err_print("Extracting data from " + w + "...")
         site = load(w)
         final_table = parse(site, final_table)
     save(final_table)  # Saves the table into a CSV

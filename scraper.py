@@ -16,6 +16,7 @@ HTML_LINK_XPATH = "//a[@href]"  # For easy access to html XPATH
 URL_IDENTIFIER = "https://www.minneapolisfed.org/news-and-events/beige-book-archive/"
 CURRENT_YEAR = 2018  # Current year of scraping
 MAX_YEAR = CURRENT_YEAR + 1
+END_YEAR = 1970  # First year of archive
 
 SCRAPING_DIRECTORY = "./scraped_files/"  # Save all htmls to here
 
@@ -36,7 +37,7 @@ def main():
     reports = []
     curr_year = CURRENT_YEAR
 
-    while curr_year >= 1970:  # While loop used becuase 'selects' change on every iteration and useful for indexing
+    while curr_year >= END_YEAR:  # While loop used becuase 'selects' change on every iteration and useful for indexing
         year = selects[index_from_year(curr_year)]  # Loads the year into memory
         err_print("Grabbing all reports for " + str(curr_year) + "...")
         year.click()
@@ -84,7 +85,7 @@ def index_from_year(year):
 def save(report_html):
     """ Helper function for saving a website into an actual html file """
     contents = soupify(report_html).prettify()
-    name = report_html[-10:]
+    name = report_html.split("/")[-1]
     err_print("Saving " + report_html + " as " + name + ".html...")
     new_file = open(SCRAPING_DIRECTORY + name + '.html', 'w', encoding="utf-8")
     new_file.write(contents)
@@ -96,6 +97,8 @@ def delete_directory(directory):
     try:
         shutil.rmtree(directory)
     except FileNotFoundError:
+        err_print("Creating new directory...")
+    finally:
         os.makedirs(directory)
 
 
