@@ -35,22 +35,28 @@ def main():
     err_print("Selecting all possible years...\n")
     reports = []
     curr_year = CURRENT_YEAR
+
     while curr_year >= 1970:
         year = selects[index_from_year(curr_year)]
         err_print("Grabbing all reports for " + str(curr_year) + "...")
         year.click()
         search_button.click()
         links = beige_books.find_elements_by_xpath(HTML_LINK_XPATH)
+
         for link in links:
             link_html = link.get_attribute("href")
             if contains(URL_IDENTIFIER + str(curr_year), link_html) and link_html not in reports:
                 err_print("Grabbed " + link_html + "!")
                 reports.append(link_html)
+
         err_print("Finished " + str(curr_year) + "!")
         curr_year -= 1
         err_print("Refreshing parameters for " + str(curr_year) + "...\n")
         search_button = beige_books.find_element_by_xpath(SEARCH_BUTTON_XPATH)
         selects = Select(beige_books.find_element_by_name(SELECT_ID)).options
+
+    err_print("Closing web driver...")
+    beige_books.close()
     err_print("Clearing old files...")
     delete_directory(SCRAPING_DIRECTORY)
     err_print("Saving reports to directory...")
