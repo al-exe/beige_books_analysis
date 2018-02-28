@@ -104,7 +104,10 @@ def delete_directory(directory):
 
 def err_print(*args, **kwargs):
     """ Helper function for easy prints to std err """
-    print(*args, file=sys.stderr, **kwargs)
+    try:
+        print(*args, file=sys.stderr, **kwargs)
+    except UnicodeEncodeError:
+        print("Invalid unicode character", file=sys.stderr)
 
 if __name__ == "__main__":  # Because this is good practice apparently
     main()
