@@ -1,46 +1,56 @@
 from bs4 import BeautifulSoup as bs
-import selenium as s
+from selenium import webdriver
+from selenium.webdriver.support.ui import Select
 import requests
-import sys
 import shutil
+import sys
+import os
 
-ARCHIVE_URL = "https://www.federalreserve.gov/monetarypolicy/beige-book-archive.htm"
+ARCHIVE_URL = "https://www.minneapolisfed.org/news-and-events/beige-book-archive"
+WEBDRIVER_PATH = "./webdriver/chromedriver.exe"
 
-YEAR_PRE_URL = "https://www.federalreserve.gov"
-YEAR_IDENTIFIER_1 = "/monetarypolicy/beigebook"
-YEAR_IDENTIFIER_2 = "https://www.federalreserve.gov/monetarypolicy/beigebook/beigebook"
-YEAR_IDENTIFIER_3 = "https://www.federalreserve.gov/fomc/beigebook"
+SEARCH_BUTTON_XPATH = '//*[@id="bb_search"]/input'
+SELECT_ID = "bb_year"
+HTML_LINK_XPATH = "//a[@href]"
 
-YI1_LEN = len(YEAR_IDENTIFIER_1)
-YI2_LEN = len(YEAR_IDENTIFIER_2)
-YI3_LEN = len(YEAR_IDENTIFIER_3)
-
-FALSE_ENDING = "default.htm"
-TRUE_ENDING = "FullReport.htm"
+URL_IDENTIFIER = "https://www.minneapolisfed.org/news-and-events/beige-book-archive/"
+CURRENT_YEAR = 2018
+MAX_YEAR = CURRENT_YEAR + 1
 
 SCRAPING_DIRECTORY = "./scraped_files/"
 
 # TODO: Add comprehensive comments
 # TODO: Clean up repetitive or messy code
-# TODO: Add 1970-1995 Year Scraping Support
 # TODO: Create scrapers for the multiple books and/or merge them with this scraper
-# TODO: Change web browsing to use selenium, because I assume it's easier
 
 
 def main():
-    err_print("Extracting archive...")
-    archive = soupify(ARCHIVE_URL)
-    err_print("Extracting yearly archives...")
-    years = grab_websites(archive, YEAR_PRE_URL, year_id_check)
+    err_print("Booting up web driver...")
+    beige_books = webdriver.Chrome(WEBDRIVER_PATH)
+    err_print("Loading main archive page...")
+    beige_books.get(ARCHIVE_URL)
+    err_print("Loading XPATH and ID identifiers...")
+    search_button = beige_books.find_element_by_xpath(SEARCH_BUTTON_XPATH)
+    selects = Select(beige_books.find_element_by_name(SELECT_ID)).options
+    err_print("Selecting all possible years...\n")
     reports = []
-    err_print("Extracting quarterly reports...")
-    for year in years:
-        yearly_reports = grab_websites(soupify(year), YEAR_PRE_URL, year_id_check)
-        reports.extend(yearly_reports)
-    err_print("Removing .pdf files...")
-    clean(reports, ".pdf")
-    err_print("Navigating to correct web path...")
-    reports = sieve_and_update(reports, FALSE_ENDING, TRUE_ENDING)
+    curr_year = CURRENT_YEAR
+    while curr_year >= 1970:
+        year = selects[index_from_year(curr_year)]
+        err_print("Grabbing all reports for " + str(curr_year) + "...")
+        year.click()
+        search_button.click()
+        links = beige_books.find_elements_by_xpath(HTML_LINK_XPATH)
+        for link in links:
+            link_html = link.get_attribute("href")
+            if contains(URL_IDENTIFIER + str(curr_year), link_html) and link_html not in reports:
+                err_print("Grabbed " + link_html + "!")
+                reports.append(link_html)
+        err_print("Finished " + str(curr_year) + "!")
+        curr_year -= 1
+        err_print("Refreshing parameters for " + str(curr_year) + "...\n")
+        search_button = beige_books.find_element_by_xpath(SEARCH_BUTTON_XPATH)
+        selects = Select(beige_books.find_element_by_name(SELECT_ID)).options
     err_print("Clearing old files...")
     delete_directory(SCRAPING_DIRECTORY)
     err_print("Saving reports to directory...")
@@ -54,68 +64,28 @@ def soupify(url):
     return bs(raw_html, 'html.parser')
 
 
-def grab_websites(html_soup, pre_url="", conditional=lambda l: int(l[:4] == 'http')):
-    links = html_soup.find_all("a")
-    htmls = []
-    for link in links:
-        proto_link = str(link.get('href'))
-        condition = conditional(proto_link)
-        if condition == 1:
-            full_link = pre_url + proto_link
-            htmls.append(full_link)
-            err_print("Grabbed " + full_link + "!")
-        elif condition > 1:
-            htmls.append(proto_link)
-            err_print("Grabbed " + proto_link + "!")
-    return htmls
+def contains(pre_str, full_str):
+    return pre_str in full_str
 
 
-def clean(sites, unwanted_type):
-    for site in sites:
-        if site[-len(unwanted_type):] == unwanted_type:
-            sites.remove(site)
-
-
-def sieve_and_update(sites, false_identifier, true_identifier):
-    updated_sites = []
-    for site in sites:
-        if site[-len(false_identifier):] == false_identifier:
-            updated_sites.append(site[:-len(false_identifier)] + true_identifier)
-        else:
-            updated_sites.append(site)
-    return updated_sites
+def index_from_year(year):
+    return -year + MAX_YEAR
 
 
 def save(report_html):
     contents = soupify(report_html).prettify()
-    name = extract_numbers(report_html)
+    name = report_html[-10:]
     err_print("Saving " + report_html + " as " + name + ".html...")
     new_file = open(SCRAPING_DIRECTORY + name + '.html', 'w', encoding="utf-8")
     new_file.write(contents)
     new_file.close()
 
 
-def extract_numbers(string):
-    rstring = ""
-    for c in string:
-        if c.isdigit():
-            rstring += c
-    return rstring
-
-
 def delete_directory(directory):
-    shutil.rmtree(directory)
-
-
-def year_id_check(link):
-    if link[:YI1_LEN] == YEAR_IDENTIFIER_1:
-        return 1
-    elif link[:YI2_LEN] == YEAR_IDENTIFIER_2:
-        return 2
-    elif link[:YI3_LEN] == YEAR_IDENTIFIER_3:
-        return 3
-    else:
-        return 0
+    try:
+        shutil.rmtree(directory)
+    except FileNotFoundError:
+        os.makedirs(directory)
 
 
 def err_print(*args, **kwargs):
