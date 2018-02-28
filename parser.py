@@ -7,39 +7,51 @@ import re
 SCRAPING_DIRECTORY = "./scraped_files/"
 TABLE_FILE_NAME = "beige_books.csv"
 
-START_FLAGS = ["Beige Book Report: ", "Beige Book: "]
-END_FLAGS = ["Latest Content from the Minneapolis Fed"]
-IGNORE_FLAGS = ["For more information about ", "www.", "https://"]
+START_FLAGS = ["Beige Book Report: ", "Beige Book: "]  # List of flags to start parsing data
+END_FLAGS = ["Latest Content from the Minneapolis Fed"]  # List of flags to stop parsing data
+IGNORE_FLAGS = ["For more information about ", "www.", "https://"]  # Extraneous data that we don't need
 
-MAX_TOPIC_LENGTH = 50
-GLOBAL_ID = 1
+MAX_TOPIC_LENGTH = 50  # To delimit between text and topic
+GLOBAL_ID = 1  # Counter for section IDs
 
+# The following gives us easy conversion from string month to numerical month
 DATE_DICTIONARY = {"January": '1', "February": '2', "March": '3', "April": '4', "May": '5', "June": '6', "July": '7'}
 DATE_DICTIONARY.update({"August": '8', "September": '9', "October": '10', "November": '11', "December": '12'})
 
-# TODO: Add detailed commentary
 # TODO: Refine parser
 # TODO: Fix iffy tags with National Summaries
+# TODO: Switch from datascience module to SQLite
 
 
 def main():
+    """ Main call for all parsing. Returns nothing and no errors (should) be thrown. """
     raw_files = os.listdir(SCRAPING_DIRECTORY)  # Lists all the files that were scraped
-    final_table = new_table()
-    for w in raw_files:  # Reads and prints the 'text content' of all the scraped files
+    final_table = new_table()  # Creates a new table to store data
+    for w in raw_files:  # Reads the 'text content' of all the scraped files and parses them into the final table
         site = load(w)
         final_table = parse(site, final_table)
-    save(final_table)
+    save(final_table)  # Saves the table into a CSV
 
 
 def new_table():
+    """
+    Creates an empty table with the following columns: ID to enumerate all possible
+    heading - text pairs, Date to store the date of every beige book published, District
+    to store the name of the district, Sector Heading to give the associated text a
+    broad topic description, and Sector Text to contain the actual text of interest.
+    """
     new = ds.Table()
-    new = new.with_column("ID", []).with_column("Date", []).with_column("District Number", [])
+    new = new.with_column("ID", []).with_column("Date", []).with_column("District", [])
     new = new.with_column("Sector Heading", []).with_column("Sector Text", [])
     return new
 
 
 def load(file_name):
-    file = open(SCRAPING_DIRECTORY + file_name, 'r', encoding="utf-8")
+    """
+    Helper function to load an html file called 'file_name' into memory. This returns a
+    'soupified' version of the html file that can be worked with through BS4.
+    """
+    file = open(SCRAPING_DIRECTORY + file_name, 'r', encoding="utf-8")  # Encoding to handle 'strange' characters
     file_contents = ""
     for line in file:
         file_contents += line
@@ -49,55 +61,69 @@ def load(file_name):
 
 
 def parse(site, table):
-    global GLOBAL_ID
+    """
+    Where all of the magic / parsing happens. Takes a website and extracts all relevant
+    information from the website and stores said information into a table.
 
+    :param site: 'Soupified' website
+    :param table: Final output table that stores all data
+    :return: The inputted table but mutated to include new data
+    """
+    global GLOBAL_ID  # Loads the unique IDs from Global frame to current frame
+
+    # Instantiates empty fields for data of interest
     Date = ""
     District = ""
     Heading = ""
     Text = ""
 
+    # Instantiates parsing flags for easy parsing control flow
     text_flag = False
     date_start = False
     first_topic = False
 
-    text = site.find_all(text=True)
+    text = site.find_all(text=True)  # Extracts all non-html text from the website
     for t in text:
+        # The following formats all text to remove extraneous whitespace
         filtered_text = re.sub('\s+', ' ', t).strip().replace("\n", " ")
-        if filtered_text == "":
+        if filtered_text == "":  # Skip empty strings
             continue
-        elif contains(filtered_text, START_FLAGS) and not text_flag:
+        elif contains(filtered_text, START_FLAGS) and not text_flag:  # Start flag for data retrieval!
             District = filtered_text.split(":")[1].strip()
-            date_start = True
-        elif date_start:
+            date_start = True  # Next line should be the date
+            if District == "National Summary":  # Ignore National Summaries for now until we fix all bugs
+                date_start = False
+        elif date_start:  # Extracts the date from the website
             Date = numeric_date(filtered_text)
             date_start = False
-            text_flag = True
-            first_topic = True
+            text_flag = True  # Next lines should be the textual data
+            first_topic = True  # Next line should be the first topic
         elif text_flag:
-            if contains(filtered_text, END_FLAGS):
-                table = add_data(table, [str(GLOBAL_ID), Date, District, Heading, Text])
-                GLOBAL_ID += 1
+            if contains(filtered_text, END_FLAGS):  # End flag for data retrieval
+                table = add_data(table, [str(GLOBAL_ID), Date, District, Heading, Text])  # Save final blobs
+                GLOBAL_ID += 1  # Increment Global ID by one for next website pass through
                 break
-            elif contains(filtered_text, IGNORE_FLAGS):
+            elif contains(filtered_text, IGNORE_FLAGS):  # Useless website guff that we don't care about
                 continue
             elif len(filtered_text) > MAX_TOPIC_LENGTH and first_topic:
-                Heading = "Summary of Economic Activity"
+                Heading = "Summary of Economic Activity"  # Lack of topic means following text is a summary
                 Text += filtered_text
                 first_topic = False
             elif len(filtered_text) < MAX_TOPIC_LENGTH and first_topic:
-                Heading = filtered_text
+                Heading = filtered_text  # Continue as normal
                 first_topic = False
             elif len(filtered_text) < MAX_TOPIC_LENGTH and not first_topic:
-                table = add_data(table, [str(GLOBAL_ID), Date, District, Heading, Text])
+                table = add_data(table, [str(GLOBAL_ID), Date, District, Heading, Text])  # Conclusion of a topic
                 Text = ""
                 Heading = filtered_text
                 GLOBAL_ID += 1
-            elif len(filtered_text) > MAX_TOPIC_LENGTH and not first_topic:
+            elif len(filtered_text) > MAX_TOPIC_LENGTH and not first_topic:  # Multi-paragraph text handling
                 Text += filtered_text
     return table
 
 
 def contains(string, str_arr):
+    """ Helper function to check is a certain string is a flag """
     for s in str_arr:
         if s in string:
             return True
@@ -105,6 +131,7 @@ def contains(string, str_arr):
 
 
 def numeric_date(date_str):
+    """ Helper function to convert string date to numeric date """
     final_date = ""
     date = date_str.split(" ")
     final_date += DATE_DICTIONARY[date[0]] + "-"
@@ -114,6 +141,7 @@ def numeric_date(date_str):
 
 
 def add_data(table, row):
+    """ Helper function to add data to table """
     print("ID: " + row[0])
     print("Date: " + row[1])
     print("District: " + row[2])
@@ -124,12 +152,16 @@ def add_data(table, row):
 
 
 def save(table):
+    """
+    Saves new table into a .csv file with all data collected for future use.
+    """
     if os.path.isfile(TABLE_FILE_NAME):
         os.remove("beige_books.csv")
     table.to_csv("beige_books.csv")
 
 
 def err_print(*args, **kwargs):
+    """ Helper function for easy prints to std err """
     print(*args, file=sys.stderr, **kwargs)
 
 if __name__ == "__main__":  # Because this is good practice apparently
