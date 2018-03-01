@@ -17,23 +17,29 @@ GLOBAL_ID = 1  # Counter for section IDs
 DATE_DICTIONARY = {"January": '1', "February": '2', "March": '3', "April": '4', "May": '5', "June": '6', "July": '7'}
 DATE_DICTIONARY.update({"August": '8', "September": '9', "October": '10', "November": '11', "December": '12'})
 
+PRINT_STATUS = False  # If true, prints out status messages as the program runs
+# WARNING: Setting PRINT_STATUS to True uses up GIGABYTES of memory.
+
 # TODO: Refine parser
 # TODO: Fix iffy tags with National Summaries
 # TODO: Switch from datascience module to SQLite
 # TODO: Save state in case of error crashes. I'm looking at you Minneapolis 11-1-1995
+# TODO: Add python garbage collection as to not use up gigabytes of heap space per parse
 
 
 def main():
     """ Main call for all parsing. Returns nothing and no errors (should) be thrown. """
-    err_print("Listing all files from scraping directory...")
+    err_print("Listing all files from scraping directory...", status=True)
     raw_files = os.listdir(SCRAPING_DIRECTORY)  # Lists all the files that were scraped
-    err_print("Instantiating new data table...\n")
+    err_print("Instantiating new data table...\n", status=True)
     final_table = new_table()  # Creates a new table to store data
     for w in raw_files:  # Reads the 'text content' of all the scraped files and parses them into the final table
         err_print("Extracting data from " + w + "...")
         site = load(w)
         final_table = parse(site, final_table)
+    err_print("Saving the final table as .csv...", status=True)
     save(final_table)  # Saves the table into a CSV
+    err_print("Parsing complete!", status=True)
 
 
 def new_table():
@@ -66,7 +72,7 @@ def load(file_name):
 def parse(site, table):
     """
     Where all of the magic / parsing happens. Takes a website and extracts all relevant
-    information from the website and stores said information into a table.
+    information from the website and stores said information into a table.s
 
     :param site: 'Soupified' website
     :param table: Final output table that stores all data
@@ -97,6 +103,7 @@ def parse(site, table):
             date_start = True  # Next line should be the date
             if District == "National Summary":  # Ignore National Summaries for now until we fix all bugs
                 date_start = False
+                err_print("Ignoring Nation Summaries for now.")
         elif date_start:  # Extracts the date from the website
             if pre_date == "":
                 try:
@@ -172,12 +179,13 @@ def save(table):
     table.to_csv("beige_books.csv")
 
 
-def err_print(*args, **kwargs):
+def err_print(*args, status=PRINT_STATUS, **kwargs):
     """ Helper function for easy prints to std err """
-    try:
-        print(*args, file=sys.stderr, **kwargs)
-    except UnicodeEncodeError:
-        print("Invalid unicode character", file=sys.stderr)
+    if status:
+        try:
+            print(*args, file=sys.stderr, **kwargs)
+        except UnicodeEncodeError:
+            print("Invalid unicode character", file=sys.stderr)
 
 if __name__ == "__main__":  # Because this is good practice apparently
     main()

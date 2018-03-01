@@ -20,6 +20,9 @@ END_YEAR = 1970  # First year of archive
 
 SCRAPING_DIRECTORY = "./scraped_files/"  # Save all htmls to here
 
+PRINT_STATUS = False  # If true, prints out status messages as the program runs
+# WARNING: Setting PRINT_STATUS to True uses up GIGABYTES of memory.
+
 # TODO: Clean up repetitive or messy code
 # TODO: Create scrapers for the multiple books and/or merge them with this scraper
 
@@ -28,16 +31,16 @@ def main():
     """ Main call for all scraping. Returns nothing and no errors (should) be thrown. """
     err_print("Booting up web driver...")
     beige_books = webdriver.Chrome(WEBDRIVER_PATH)  # Webdriver loaded from folder in case PATH not configured
-    err_print("Loading main archive page...")
+    err_print("Loading main archive page...", status=True)
     beige_books.get(ARCHIVE_URL)
-    err_print("Loading XPATH and ID identifiers...")
+    err_print("Loading XPATH and ID identifiers...", status=True)
     search_button = beige_books.find_element_by_xpath(SEARCH_BUTTON_XPATH)  # Easy button pressing
     selects = Select(beige_books.find_element_by_name(SELECT_ID)).options  # Grab all available options
-    err_print("Selecting all possible years...\n")
+    err_print("Selecting all possible years...\n", status=True)
     reports = []
     curr_year = CURRENT_YEAR
 
-    while curr_year >= END_YEAR:  # While loop used becuase 'selects' change on every iteration and useful for indexing
+    while curr_year >= END_YEAR:  # While loop used because 'selects' change on every iteration and useful for indexing
         year = selects[index_from_year(curr_year)]  # Loads the year into memory
         err_print("Grabbing all reports for " + str(curr_year) + "...")
         year.click()
@@ -56,14 +59,14 @@ def main():
         search_button = beige_books.find_element_by_xpath(SEARCH_BUTTON_XPATH)  # Refresh needed because site changed
         selects = Select(beige_books.find_element_by_name(SELECT_ID)).options
 
-    err_print("Closing web driver...")
+    err_print("Closing web driver...", status=True)
     beige_books.close()  # Exits out of the website
-    err_print("Clearing old files...")
+    err_print("Clearing old files...", status=True)
     delete_directory(SCRAPING_DIRECTORY)  # As not to accumulate too many files
-    err_print("Saving reports to directory...")
+    err_print("Saving reports to directory...", status=True)
     for report in reports:
         save(report)
-    err_print("Scraping complete!")
+    err_print("Scraping complete!", status=True)
 
 
 def soupify(url):
@@ -102,12 +105,13 @@ def delete_directory(directory):
         os.makedirs(directory)
 
 
-def err_print(*args, **kwargs):
+def err_print(*args, status=PRINT_STATUS, **kwargs):
     """ Helper function for easy prints to std err """
-    try:
-        print(*args, file=sys.stderr, **kwargs)
-    except UnicodeEncodeError:
-        print("Invalid unicode character", file=sys.stderr)
+    if status:
+        try:
+            print(*args, file=sys.stderr, **kwargs)
+        except UnicodeEncodeError:
+            print("Invalid unicode character", file=sys.stderr)
 
 if __name__ == "__main__":  # Because this is good practice apparently
     main()
