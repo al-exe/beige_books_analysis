@@ -11,7 +11,7 @@ START_FLAGS = ["Beige Book Report: ", "Beige Book: "]  # List of flags to start 
 END_FLAGS = ["Latest Content from the Minneapolis Fed", "For more information about "]  # List of flags to stop parse
 
 MAX_TOPIC_LENGTH = 50  # To delimit between text and topic
-GLOBAL_ID = 1  # Counter for section IDs
+GLOBAL_ID = 15822  # Counter for section IDs
 
 # The following gives us easy conversion from string month to numerical month
 DATE_DICTIONARY = {"January": '1', "February": '2', "March": '3', "April": '4', "May": '5', "June": '6', "July": '7'}
@@ -175,8 +175,8 @@ def save(table):
     Saves new table into a .csv file with all data collected for future use.
     """
     if os.path.isfile(TABLE_FILE_NAME):
-        os.remove("beige_books.csv")
-    table.to_csv("beige_books.csv")
+        os.remove(TABLE_FILE_NAME)
+    table.to_csv(TABLE_FILE_NAME)
 
 
 def err_print(*args, status=PRINT_STATUS, **kwargs):
