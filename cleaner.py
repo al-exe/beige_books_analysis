@@ -3,6 +3,9 @@ import sys
 import os
 import re
 
+"""
+Import all code from notes.ipynb to here
+"""
 
 def main():
     return

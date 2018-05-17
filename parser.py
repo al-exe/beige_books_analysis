@@ -20,12 +20,6 @@ DATE_DICTIONARY.update({"August": '8', "September": '9', "October": '10', "Novem
 PRINT_STATUS = False  # If true, prints out status messages as the program runs
 # WARNING: Setting PRINT_STATUS to True uses up GIGABYTES of memory.
 
-# TODO: Refine parser
-# TODO: Fix iffy tags with National Summaries
-# TODO: Switch from datascience module to SQLite
-# TODO: Save state in case of error crashes. I'm looking at you Minneapolis 11-1-1995
-# TODO: Add python garbage collection as to not use up gigabytes of heap space per parse
-
 
 def main():
     """ Main call for all parsing. Returns nothing and no errors (should) be thrown. """

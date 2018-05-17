@@ -23,9 +23,6 @@ SCRAPING_DIRECTORY = "./scraped_files/"  # Save all htmls to here
 PRINT_STATUS = False  # If true, prints out status messages as the program runs
 # WARNING: Setting PRINT_STATUS to True uses up GIGABYTES of memory.
 
-# TODO: Clean up repetitive or messy code
-# TODO: Create scrapers for the multiple books and/or merge them with this scraper
-
 
 def main():
     """ Main call for all scraping. Returns nothing and no errors (should) be thrown. """
