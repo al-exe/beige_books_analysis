@@ -9,12 +9,12 @@
                                 <br clear="all">
                                 <div class="row">
                                     <div class="col-md-3">
-                                        <input class="form-control" type="text" placeholder="Keywords" value="{{speaker}}" id="speaker"/>
-                                        <small>Enter various keywords separated by commas</small>
+                                        <input class="form-control" type="text" placeholder="Primary Keyword" value="{{speaker}}" id="speaker"/>
+                                        <small>Enter primary keyword of interest</small>
                                     </div>
                                     <div class="col-md-3">
                                         <select class="form-control" id="year">
-                                            <option value="">All years</option>
+                                            <option value="">All Years</option>
                                             {% for year in years %}
                                             <option value="{{year}}" {% if selected_year == year %}selected{%endif%}>{{year}}</option>
                                             {% endfor %}
@@ -43,23 +43,23 @@
                                                 <td>District</td>
                                                 <td>Sector Heading</td>
                                                 <td>Sector Text</td>
-                                                <td>Keywords</td>
+                                                <td>First Keyword</td>
                                             </thead>
                                             <tbody>
                                                 {% if (records is defined) and records %}
                                                     {% for record in records %}
                                                         <tr>
                                                             <td>{{record.date}}</td>
-                                                            <td>{{record.name}}</td>
-                                                            <td>{{record.title}}</td>
+                                                            <td>{{record.district}}</td>
+                                                            <td>{{record.heading}}</td>
                                                             <!-- This line shows just the first 100 characters and cuts it after that -->
                                                             <td>{{record.text[0:100] + " ..."}}</td>
-                                                            <td>{{record.text[0:100] + " ..."}}</td>
+                                                            <td>{{record.first}}</td>
                                                         </tr>
                                                     {% endfor %}
                                                 {% else %}
                                                 <tr>
-                                                    <td colspan="4">No results</td>
+                                                    <td colspan="5">No results</td>
                                                 </tr>
                                                 {% endif %}
                                             </tbody>
